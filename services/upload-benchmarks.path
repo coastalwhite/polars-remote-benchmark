@@ -1,5 +1,5 @@
 [Path]
-Unit=watcher.service
+Unit=upload-benchmarks.service
 PathChanged=/path/to/polars-remote-benchmark/upload-probe
 
 [Install]

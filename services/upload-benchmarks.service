@@ -6,9 +6,9 @@ StartLimitBurst=5
 
 [Service]
 Type=oneshot
-EnvironmentFile=/path/to/secrets
+EnvironmentFile=/etc/systemd/system/upload-benchmarks.env
 WorkingDirectory=/path/to/polars-remove-benchmark
-ExecStart=./upload-graphs.sh
+ExecStart=/path/to/polars-remove-benchmark/upload-graphs.sh
 User=polars
 Group=polars
 

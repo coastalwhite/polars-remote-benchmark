@@ -43,6 +43,8 @@ cp services/upload-benchmarks.path /etc/systemd/system
 vi /etc/systemd/system/upload-benchmarks.service
 vi /etc/systemd/system/upload-benchmarks.path
 
+chmod 400 /etc/systemd/system/upload-benchmarks.*
+
 # Start the services
 systemctl enable upload-benchmarks.service
 systemctl enable upload-benchmarks.path
