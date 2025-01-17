@@ -109,7 +109,7 @@ all_chart.properties(
     title="Normalized runtimes for PDS-H queries over time",
 ).save(
     f'{OUT_DIR}/queries.{GRAPH_OUTPUT_FORMAT}',
-    format=GRAPH_OUTPUT_FORMAT
+    format=GRAPH_OUTPUT_FORMAT,
 )
 
 
@@ -138,7 +138,7 @@ for q in range(1, NUM_QUERIES+1):
         title=f"Runtime for PDS-H Query {q} over time",
     ).save(
         f'{OUT_DIR}/queries/{q}.{GRAPH_OUTPUT_FORMAT}',
-        format=GRAPH_OUTPUT_FORMAT
+        format=GRAPH_OUTPUT_FORMAT,
     )
 
 
@@ -163,5 +163,5 @@ filesize_chart.properties(
     title="File size of the wheel with minimal debuginfo over time",
 ).save(
     f'{OUT_DIR}/file_size.{GRAPH_OUTPUT_FORMAT}',
-    format=GRAPH_OUTPUT_FORMAT
+    format=GRAPH_OUTPUT_FORMAT,
 )

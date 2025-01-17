@@ -1,0 +1,16 @@
+[Unit]
+Description=Polars Remote Benchmark Uploader
+After=network.target
+StartLimitIntervalSec=10
+StartLimitBurst=5
+
+[Service]
+Type=oneshot
+EnvironmentFile=/path/to/secrets
+WorkingDirectory=/path/to/polars-remove-benchmark
+ExecStart=./upload-graphs.sh
+User=polars
+Group=polars
+
+[Install]
+WantedBy=multi-user.target

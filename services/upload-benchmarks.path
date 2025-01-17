@@ -1,0 +1,6 @@
+[Path]
+Unit=watcher.service
+PathChanged=/path/to/polars-remote-benchmark/upload-probe
+
+[Install]
+WantedBy=multi-user.target
