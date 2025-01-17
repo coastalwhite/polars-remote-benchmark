@@ -73,6 +73,7 @@ alt.themes.register('monospace-axisx', monospace_axisx)
 alt.themes.enable('monospace-axisx')
 
 # Create one chart for all the queries
+selector = pl.selectors.starts_with(f'mean_q')
 all_chart = alt.Chart(
     pl.concat(
         df
@@ -91,7 +92,9 @@ all_chart = alt.Chart(
             ])
         for engine in ENGINES
     ).with_columns(
-        norm_time = pl.sum_horizontal(pl.selectors.starts_with(f'mean_q')) / pl.lit(NUM_QUERIES),
+        norm_time = pl.sum_horizontal(selector) / pl.sum_horizontal(
+            pl.when(selector.is_not_null()).then(pl.lit(1))
+        ),
     ).with_columns(
         norm_time = pl.when(pl.col.norm_time > 0.0001).then(pl.col.norm_time),
     )
