@@ -34,19 +34,7 @@ for i in $(seq $START $NUM_RUNS)
 do
     echo "Run $i of $NUM_RUNS"
     echo
-    for j in $(seq 1 22)
-    do
-	# Query 8 and 9 currently OOM
-        if [ "$j" -eq "8" ]; then
-	    echo "Code block 'Run polars query $j' took: 0.0 s"
-	else
-	    if [ "$j" -eq "9" ]; then
-	        echo "Code block 'Run polars query $j' took: 0.0 s"
-	    else
-	        RUN_POLARS_NEW_STREAMING=1 python3 -m "queries.polars.q$j"
-	    fi
-	fi
-    done
+    RUN_POLARS_NEW_STREAMING=1 python3 -m queries.polars
     echo
 done
 
