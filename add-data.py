@@ -62,7 +62,7 @@ streaming_query_times = pl.DataFrame(streaming_query_times).select(pl.all().medi
 os.system(f"strip {POLARS_DIR}/polars.abi3.so --strip-debug -o {POLARS_DIR}/polars.abi3.so.stripped")
 file_size = os.path.getsize(f"{POLARS_DIR}/polars.abi3.so.stripped")
 # Get the commit hash
-commit_hash = subprocess.check_output("git rev-parse HEAD", shell=True).decode("utf-8")
+commit_hash = subprocess.check_output("git rev-parse HEAD", shell=True).decode("utf-8").strip()
 # Get the commit title
 commit_message = subprocess.check_output("git show -s --format=%s", shell=True).decode("utf-8").strip().replace('"', "'")
 # Get the Unix Timestamp of the commit
