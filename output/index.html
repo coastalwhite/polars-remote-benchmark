@@ -3,13 +3,6 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Polars Benchmarks Portal</title>
-        <script type="application/javascript">
-            function resizeIFrame( iFrame ) {
-                iFrame.width  = iFrame.contentWindow.document.body.scrollWidth + 20 + 'px';
-                iFrame.height = iFrame.contentWindow.document.body.scrollHeight + 20 + 'px';
-                iFrame.style  = 'padding:16px;';
-            }
-        </script>
         <style>
             h2 > a {
                 text-decoration: none;
@@ -25,6 +18,9 @@
             h3 > a::after {
                 content: " \1F517";
             }
+			embed {
+				object-fit: initial;
+			}
         </style>
     </head>
     <body>
@@ -32,103 +28,103 @@
 
         <div style="margin-top:128px" id="file-size">
             <h2><a href="#file-size">File Size</a></h2>
-            <iframe src="/file_size.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+            <embed src="/file_size.svg" />
         </div>
 
         <div style="margin-top:128px" id="queries">
             <h2><a href="#queries">Summarized PDS-H Queries</a></h2>
-            <iframe src="/queries.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+            <embed src="/queries.svg" />
         </div>
 
         <div style="margin-top:128px">
             <h2>Specific PDS-H Queries</h2>
             <div style="margin-top:64px" id="query1">
                 <h3><a href="#query1">Query 1</a></h3>
-                <iframe src="/queries/1.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/1.svg" />
             </div>
             <div style="margin-top:64px" id="query2">
                 <h3><a href="#query2">Query 2</a></h3>
-                <iframe src="/queries/2.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/2.svg" />
             </div>
             <div style="margin-top:64px" id="query3">
                 <h3><a href="#query3">Query 3</a></h3>
-                <iframe src="/queries/3.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/3.svg" />
             </div>
             <div style="margin-top:64px" id="query4">
                 <h3><a href="#query4">Query 4</a></h3>
-                <iframe src="/queries/4.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/4.svg" />
             </div>
             <div style="margin-top:64px" id="query5">
                 <h3><a href="#query5">Query 5</a></h3>
-                <iframe src="/queries/5.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/5.svg" />
             </div>
             <div style="margin-top:64px" id="query6">
                 <h3><a href="#query6">Query 6</a></h3>
-                <iframe src="/queries/6.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/6.svg" />
             </div>
             <div style="margin-top:64px" id="query7">
                 <h3><a href="#query7">Query 7</a></h3>
-                <iframe src="/queries/7.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/7.svg" />
             </div>
             <div style="margin-top:64px" id="query8">
                 <h3><a href="#query8">Query 8</a></h3>
-                <iframe src="/queries/8.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/8.svg" />
             </div>
             <div style="margin-top:64px" id="query9">
                 <h3><a href="#query9">Query 9</a></h3>
-                <iframe src="/queries/9.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/9.svg" />
             </div>
             <div style="margin-top:64px" id="query10">
                 <h3><a href="#query10">Query 10</a></h3>
-                <iframe src="/queries/10.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/10.svg" />
             </div>
             <div style="margin-top:64px" id="query11">
                 <h3><a href="#query11">Query 11</a></h3>
-                <iframe src="/queries/11.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/11.svg" />
             </div>
             <div style="margin-top:64px" id="query12">
                 <h3><a href="#query12">Query 12</a></h3>
-                <iframe src="/queries/12.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/12.svg" />
             </div>
             <div style="margin-top:64px" id="query13">
                 <h3><a href="#query13">Query 13</a></h3>
-                <iframe src="/queries/13.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/13.svg" />
             </div>
             <div style="margin-top:64px" id="query14">
                 <h3><a href="#query14">Query 14</a></h3>
-                <iframe src="/queries/14.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/14.svg" />
             </div>
             <div style="margin-top:64px" id="query15">
                 <h3><a href="#query15">Query 15</a></h3>
-                <iframe src="/queries/15.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/15.svg" />
             </div>
             <div style="margin-top:64px" id="query16">
                 <h3><a href="#query16">Query 16</a></h3>
-                <iframe src="/queries/16.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/16.svg" />
             </div>
             <div style="margin-top:64px" id="query17">
                 <h3><a href="#query17">Query 17</a></h3>
-                <iframe src="/queries/17.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/17.svg" />
             </div>
             <div style="margin-top:64px" id="query18">
                 <h3><a href="#query18">Query 18</a></h3>
-                <iframe src="/queries/18.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/18.svg" />
             </div>
             <div style="margin-top:64px" id="query19">
                 <h3><a href="#query19">Query 19</a></h3>
-                <iframe src="/queries/19.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/19.svg" />
             </div>
             <div id="query20">
                 <h3><a href="#query20">Query 20</a></h3>
-                <iframe src="/queries/20.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/20.svg" />
             </div>
             <div style="margin-top:64px" id="query21">
                 <h3><a href="#query21">Query 21</a></h3>
-                <iframe src="/queries/21.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/21.svg" />
             </div>
             <div style="margin-top:64px" id="query22">
                 <h3><a href="#query22">Query 22</a></h3>
-                <iframe src="/queries/22.html" frameborder="0" scrolling="no" onload="resizeIFrame(this)"></iframe>
+				<embed src="/queries/22.svg" />
             </div>
         </div>
 

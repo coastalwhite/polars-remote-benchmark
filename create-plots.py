@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
-#
 
-import re
 import sys
-import os
-import math
-import altair as alt
-from time import time
+import os, io
+import seaborn as sns
+import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plt
+from pathlib import Path
 import polars as pl
-import subprocess
 
 HASH_SIZE      =   7
 NUM_QUERIES    =  22
 PLOT_MAX_WIDTH =  50
 
-BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+MARGIN         = 1.2
+ALPHA          =  .8
+MARKER_SIZE    =   6
+MARKER_EDGE    = 'white'
 
-STORE_FILE = f'{BASE_DIR}/data.csv'
-OUT_DIR    = f'{BASE_DIR}/output'
+BASE_DIR = Path(os.path.dirname(os.path.realpath(__file__)))
 
-GRAPH_OUTPUT_FORMAT = 'html'
+STORE_FILE = BASE_DIR / 'data.csv'
+OUT_DIR    = BASE_DIR / 'output'
+
+MARKED_GID_PREFIX = 'marked-lineplot'
+
+# Apply the default theme
+sns.set_theme()
 
 # Create the schema
 schema = {}
@@ -60,108 +66,156 @@ df = (
 )
 
 
+def save_with_tooltips(fig, path: Path, has_datapoint: list[list[bool]]):
+    f = io.BytesIO()
+    fig.savefig(f, format='svg')
+    tree, xmlid = ET.XMLID(f.getvalue())
+
+    # Find the SVG group with all the markers and add the commit messages in
+    # there. It is quite hacky, but it works.
+    # 
+    # Inspired by: https://matplotlib.org/stable/gallery/user_interfaces/svg_tooltip_sgskip.html
+    for i, ps in enumerate(has_datapoint):
+        group = xmlid[f'{MARKED_GID_PREFIX}-{i}']
+
+        marker_group = None
+        for elem in group:
+            if not elem.tag.endswith('}g'):
+                continue
+            if len(elem) != sum(has_datapoint[i]):
+                continue
+            if not all(e.tag.endswith('}use') for e in elem):
+                continue
+            marker_group = elem
+            break
+        if marker_group is None:
+            print('Did not find marker group!', file=sys.stderr)
+            exit(1)
+
+        for j, (e, p) in enumerate(zip(marker_group, ps)):
+            if p:
+                assert e.tag.endswith('use')
+                t = ET.Element('title')
+                t.text = df['commit_message'][j]
+                e.append(t)
+
+    ET.ElementTree(tree).write(path)
+    plt.close()
+    print(f'{path}... done')
+
 # Make the commit hashes a monospace font
-def monospace_axisx():
-    return {
-        "config" : {
-             "axisX": {
-                  "labelFont": 'monospace',
-             },
-        }
-    }
-alt.themes.register('monospace-axisx', monospace_axisx)
-alt.themes.enable('monospace-axisx')
+ET.register_namespace("", "http://www.w3.org/2000/svg")
 
 # Create one chart for all the queries
 selector = pl.selectors.starts_with(f'mean_q')
-all_chart = alt.Chart(
-    pl.concat(
-        df
-            .select([
-                pl.col('commit_hash'),
-                pl.col('commit_message'),
-            ] + [
-                pl.when(
-                    pl.col(f'{PREFIX_DICT[engine]}q{q}') > 0.0001
-                ).then(
-                    (pl.col(f'{PREFIX_DICT[engine]}q{q}') / pl.col(f'{PREFIX_DICT[engine]}q{q}').mean())
-                ).alias(f'mean_q{q}')
-                for q in range(1, NUM_QUERIES+1)
-            ] + [
-                pl.lit(engine).alias('engine'),
-            ])
-        for engine in ENGINES
-    ).with_columns(
-        norm_time = pl.sum_horizontal(selector) / pl.sum_horizontal(
-            pl.when(selector.is_not_null()).then(pl.lit(1))
-        ),
-    ).with_columns(
-        norm_time = pl.when(pl.col.norm_time > 0.0001).then(pl.col.norm_time),
+per_engine_data = [
+    df
+        .select([
+            pl.col('commit_hash'),
+            pl.col('commit_message'),
+        ] + [
+            pl.when(
+                pl.col(f'{PREFIX_DICT[engine]}q{q}') > 0.0001
+            ).then(
+                (pl.col(f'{PREFIX_DICT[engine]}q{q}') / pl.col(f'{PREFIX_DICT[engine]}q{q}').mean())
+            ).alias(f'mean_q{q}')
+            for q in range(1, NUM_QUERIES+1)
+        ])
+        .with_columns(
+            norm_time = pl.sum_horizontal(selector) / pl.sum_horizontal(
+                pl.when(selector.is_not_null()).then(pl.lit(1))
+            ),
+        ).with_columns(
+            norm_time = pl.when(pl.col.norm_time > 0.0001).then(pl.col.norm_time),
+        )
+    for engine in ENGINES
+]
+fig, ax = plt.subplots(figsize=(8, 4))
+y_limit = max((per_engine_data[i].get_column("norm_time").max() or 0.0) for i in range(len(ENGINES))) * MARGIN
+for i, engine in enumerate(ENGINES):
+    ax.plot(
+        per_engine_data[i]['commit_hash'], per_engine_data[i]['norm_time'],
+        marker='o', linestyle='-',
+        label=engine, gid=f'{MARKED_GID_PREFIX}-{i}',
+        markersize=MARKER_SIZE, markeredgecolor=MARKER_EDGE,
+        alpha=ALPHA,
     )
-).encode(
-     x=alt.X('commit_hash:N', sort=None).title('Commit hash'),
-     y=alt.Y(f'norm_time:Q').title('Normalized query runtime'),
-     color=alt.Color('engine:N').title('Engine'),
-     tooltip='commit_message',
-)
-all_chart = all_chart.mark_point() + all_chart.mark_line()
-all_chart.properties(
-    title="Normalized runtimes for PDS-H queries over time",
-).save(
-    f'{OUT_DIR}/queries.{GRAPH_OUTPUT_FORMAT}',
-    format=GRAPH_OUTPUT_FORMAT,
-)
 
+ax.set_xticks(df['commit_hash'])
+ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
+ax.set_ylim(bottom = 0, top = y_limit)
+
+ax.set_xlabel("Commit Hash")
+ax.set_ylabel("Normalized Query Runtime")
+ax.grid(axis="x") # Only horizontal stripes
+
+legend = ax.legend()
+legend.set_title('Engine')
+
+ax.set_title('Normalized runtimes for PDS-H queries over time')
+fig.tight_layout()
+
+has_datapoint = [
+    d['norm_time'].is_not_null().to_list()
+    for d in per_engine_data
+]
+save_with_tooltips(fig, OUT_DIR / 'queries.svg', has_datapoint)
 
 # Create a chart for each individual query
 for q in range(1, NUM_QUERIES+1):
-    c = (
-        alt
-            .Chart(pl.concat(
-                df.select((
-                    pl.col('commit_hash'),
-                    pl.col('commit_message'),
-                    pl.col(f'{PREFIX_DICT[engine]}q{q}').alias(f'q{q}'),
-                    pl.lit(engine).alias('engine')
-                )) for engine in ENGINES
-            ))
-            .encode(
-                x=alt.X('commit_hash:N', sort=None).title('Commit hash'),
-                y=alt.Y(f'q{q}:Q').title('Query runtime (s)'),
-                color=alt.Color('engine:N').title('Engine'),
-                tooltip='commit_message',
-            )
-    )
-    c = c.mark_line() + c.mark_point()
-        
-    c.properties(
-        title=f"Runtime for PDS-H Query {q} over time",
-    ).save(
-        f'{OUT_DIR}/queries/{q}.{GRAPH_OUTPUT_FORMAT}',
-        format=GRAPH_OUTPUT_FORMAT,
-    )
+    fig, ax = plt.subplots(figsize=(8, 4))
+    y_limit = max((per_engine_data[i][f'mean_q{q}'].max() or 0.0) for i in range(len(ENGINES))) * MARGIN
+    for i, engine in enumerate(ENGINES):
+        ax.plot(
+            per_engine_data[i]['commit_hash'], per_engine_data[i][f'mean_q{q}'],
+            marker='o', linestyle='-',
+            label=engine, gid=f'{MARKED_GID_PREFIX}-{i}',
+            markersize=MARKER_SIZE, markeredgecolor=MARKER_EDGE,
+            alpha=ALPHA,
+        )
 
+    ax.set_xticks(df['commit_hash'])
+    ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
+    ax.set_ylim(bottom = 0, top = y_limit)
+
+    ax.set_xlabel("Commit Hash")
+    ax.set_ylabel('Query runtime (s)')
+    ax.grid(axis="x") # Only horizontal stripes
+
+    legend = ax.legend()
+    legend.set_title('Engine')
+
+    ax.set_title(f"Runtime for PDS-H Query {q} over time")
+    fig.tight_layout()
+
+    has_datapoint = [
+        d[f'mean_q{q}'].is_not_null().to_list()
+        for d in per_engine_data
+    ]
+    save_with_tooltips(fig, OUT_DIR / 'queries' / f'{q}.svg', has_datapoint)
 
 # Create a chart for the file size over time
 BYTES_IN_MB = 2**20
-filesize_chart = (
-    alt
-        .Chart(df.select('commit_hash', 'commit_message', 'file_size'))
-        .encode(
-            x=alt.X('commit_hash:N', sort=None).title('Commit hash'),
-            y=alt.Y(
-                f'file_size:Q', axis=alt.Axis(
-                    # Change the labels to be MBs
-                    labelExpr=f"round(datum.value / {BYTES_IN_MB}) + 'MB'",
-                ),
-            ).title('Binary size'),
-            tooltip='commit_message',
-        )
+fig, ax = plt.subplots(figsize=(8, 4))
+y_limit = ((df['file_size'].max() / BYTES_IN_MB) or 0.0) * MARGIN
+ax.plot(
+    df['commit_hash'], df['file_size'] / BYTES_IN_MB,
+    marker='o', linestyle='-',
+    label='File Size', gid=f'{MARKED_GID_PREFIX}-0',
+    markersize=MARKER_SIZE, markeredgecolor=MARKER_EDGE,
+    alpha=ALPHA,
 )
-filesize_chart = filesize_chart.mark_line() + filesize_chart.mark_point()
-filesize_chart.properties(
-    title="File size of the wheel with minimal debuginfo over time",
-).save(
-    f'{OUT_DIR}/file_size.{GRAPH_OUTPUT_FORMAT}',
-    format=GRAPH_OUTPUT_FORMAT,
-)
+
+ax.set_xticks(df['commit_hash'])
+ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
+ax.set_ylim(bottom = 0, top = y_limit)
+
+ax.set_xlabel("Commit Hash")
+ax.set_ylabel('Binary size (MB)')
+ax.grid(axis="x") # Only horizontal stripes
+
+ax.set_title(f"File size of the wheel with minimal debuginfo over time")
+fig.tight_layout()
+
+has_datapoint = [ df['file_size'].is_not_null().to_list() ]
+save_with_tooltips(fig, OUT_DIR / 'file_size.svg', has_datapoint)
