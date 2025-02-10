@@ -76,6 +76,8 @@ def save_with_tooltips(fig, path: Path, has_datapoint: list[list[bool]]):
     # 
     # Inspired by: https://matplotlib.org/stable/gallery/user_interfaces/svg_tooltip_sgskip.html
     for i, ps in enumerate(has_datapoint):
+        assert len(ps) == PLOT_MAX_WIDTH
+
         group = xmlid[f'{MARKED_GID_PREFIX}-{i}']
 
         marker_group = None
@@ -92,12 +94,17 @@ def save_with_tooltips(fig, path: Path, has_datapoint: list[list[bool]]):
             print('Did not find marker group!', file=sys.stderr)
             exit(1)
 
-        for j, (e, p) in enumerate(zip(marker_group, ps)):
-            if p:
-                assert e.tag.endswith('use')
-                t = ET.Element('title')
-                t.text = df['commit_message'][j]
-                e.append(t)
+        j = 0
+        for e in marker_group:
+            while not ps[j]:
+                j += 1
+
+            assert e.tag.endswith('use')
+            t = ET.Element('title')
+            t.text = df['commit_message'][j]
+            e.append(t)
+
+            j += 1
 
     ET.ElementTree(tree).write(path)
     plt.close()
@@ -105,6 +112,74 @@ def save_with_tooltips(fig, path: Path, has_datapoint: list[list[bool]]):
 
 # Make the commit hashes a monospace font
 ET.register_namespace("", "http://www.w3.org/2000/svg")
+
+def set_commit_hash_xaxis(ax):
+    ax.set_xticks(df['commit_hash'])
+    ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
+    ax.set_xlabel("Commit Hash")
+    ax.grid(axis="x") # Only horizontal stripes
+
+
+selector = pl.selectors.starts_with(f'mean_q')
+prod = pl.lit(1.0)
+for q in range(1, NUM_QUERIES+1):
+    prod = prod * pl.col(f'q{q}')
+per_engine_data = [
+    df
+        .select([
+            pl.col('commit_hash'),
+            pl.col('commit_message'),
+        ] + [
+            pl.col(f'{PREFIX_DICT[engine]}q{q}').alias(f'q{q}')
+            for q in range(1, NUM_QUERIES+1)
+        ])
+        .with_columns(
+            pl.when(pl.col(f'q{q}') > 0.0001).then(f'q{q}').alias(f'q{q}')
+            for q in range(1, NUM_QUERIES+1)
+        ).with_columns(
+            (pl.col(f'q{q}') / pl.col(f'q{q}').mean()).alias(f'mean_q{q}')
+            for q in range(1, NUM_QUERIES+1)
+        )
+        .with_columns(
+            geomean = prod.pow(1.0 / NUM_QUERIES).alias('geomean'),
+            norm_time = pl.sum_horizontal(selector) / pl.sum_horizontal(
+                pl.when(selector.is_not_null()).then(pl.lit(1))
+            ),
+        ).with_columns(
+            norm_time = pl.when(pl.col.norm_time > 0.0001).then(pl.col.norm_time),
+        )
+    for engine in ENGINES
+]
+
+# Create one chart for all the queries
+fig, ax = plt.subplots(figsize=(8, 4))
+y_limit = max((per_engine_data[i].get_column("geomean").max() or 0.0) for i in range(len(ENGINES))) * MARGIN
+for i, engine in enumerate(ENGINES):
+    ax.plot(
+        per_engine_data[i]['commit_hash'], per_engine_data[i]['geomean'],
+        marker='o', linestyle='-',
+        label=engine, gid=f'{MARKED_GID_PREFIX}-{i}',
+        markersize=MARKER_SIZE, markeredgecolor=MARKER_EDGE,
+        alpha=ALPHA,
+    )
+
+set_commit_hash_xaxis(ax)
+
+ax.set_ylim(bottom = 0, top = y_limit)
+ax.set_ylabel("Geometric Mean of Queries (s)")
+
+legend = ax.legend()
+legend.set_title('Engine')
+
+ax.set_title('Geometric mean for PDS-H queries over time')
+fig.tight_layout()
+
+has_datapoint = [
+    d['geomean'].is_not_null().to_list()
+    for d in per_engine_data
+]
+save_with_tooltips(fig, OUT_DIR / 'queries-geomean.svg', has_datapoint)
+
 
 # Create one chart for all the queries
 selector = pl.selectors.starts_with(f'mean_q')
@@ -144,13 +219,10 @@ for i, engine in enumerate(ENGINES):
         alpha=ALPHA,
     )
 
-ax.set_xticks(df['commit_hash'])
-ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
-ax.set_ylim(bottom = 0, top = y_limit)
+set_commit_hash_xaxis(ax)
 
-ax.set_xlabel("Commit Hash")
+ax.set_ylim(bottom = 0, top = y_limit)
 ax.set_ylabel("Normalized Query Runtime")
-ax.grid(axis="x") # Only horizontal stripes
 
 legend = ax.legend()
 legend.set_title('Engine')
@@ -177,13 +249,10 @@ for q in range(1, NUM_QUERIES+1):
             alpha=ALPHA,
         )
 
-    ax.set_xticks(df['commit_hash'])
-    ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
-    ax.set_ylim(bottom = 0, top = y_limit)
+    set_commit_hash_xaxis(ax)
 
-    ax.set_xlabel("Commit Hash")
+    ax.set_ylim(bottom = 0, top = y_limit)
     ax.set_ylabel('Query runtime (s)')
-    ax.grid(axis="x") # Only horizontal stripes
 
     legend = ax.legend()
     legend.set_title('Engine')
@@ -209,13 +278,10 @@ ax.plot(
     alpha=ALPHA,
 )
 
-ax.set_xticks(df['commit_hash'])
-ax.tick_params(axis='x', rotation=90, labelsize=8, labelfontfamily='monospace')
-ax.set_ylim(bottom = 0, top = y_limit)
+set_commit_hash_xaxis(ax)
 
-ax.set_xlabel("Commit Hash")
+ax.set_ylim(bottom = 0, top = y_limit)
 ax.set_ylabel('Binary size (MB)')
-ax.grid(axis="x") # Only horizontal stripes
 
 ax.set_title(f"File size of the wheel with minimal debuginfo over time")
 fig.tight_layout()
