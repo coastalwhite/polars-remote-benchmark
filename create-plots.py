@@ -192,7 +192,7 @@ for q in range(1, NUM_QUERIES+1):
     fig.tight_layout()
 
     has_datapoint = [
-        d[f'mean_q{q}'].is_not_null().to_list()
+        d[f'q{q}'].is_not_null().to_list()
         for d in per_engine_data
     ]
     save_with_tooltips(fig, OUT_DIR / 'queries' / f'{q}.svg', has_datapoint)
