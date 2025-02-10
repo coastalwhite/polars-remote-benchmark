@@ -120,6 +120,9 @@ per_engine_data = [
                 (pl.col(f'{PREFIX_DICT[engine]}q{q}') / pl.col(f'{PREFIX_DICT[engine]}q{q}').mean())
             ).alias(f'mean_q{q}')
             for q in range(1, NUM_QUERIES+1)
+        ] + [
+            pl.col(f'{PREFIX_DICT[engine]}q{q}').alias(f'q{q}')
+            for q in range(1, NUM_QUERIES+1)
         ])
         .with_columns(
             norm_time = pl.sum_horizontal(selector) / pl.sum_horizontal(
@@ -164,10 +167,10 @@ save_with_tooltips(fig, OUT_DIR / 'queries.svg', has_datapoint)
 # Create a chart for each individual query
 for q in range(1, NUM_QUERIES+1):
     fig, ax = plt.subplots(figsize=(8, 4))
-    y_limit = max((per_engine_data[i][f'mean_q{q}'].max() or 0.0) for i in range(len(ENGINES))) * MARGIN
+    y_limit = max((per_engine_data[i][f'q{q}'].max() or 0.0) for i in range(len(ENGINES))) * MARGIN
     for i, engine in enumerate(ENGINES):
         ax.plot(
-            per_engine_data[i]['commit_hash'], per_engine_data[i][f'mean_q{q}'],
+            per_engine_data[i]['commit_hash'], per_engine_data[i][f'q{q}'],
             marker='o', linestyle='-',
             label=engine, gid=f'{MARKED_GID_PREFIX}-{i}',
             markersize=MARKER_SIZE, markeredgecolor=MARKER_EDGE,
