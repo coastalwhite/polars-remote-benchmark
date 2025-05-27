@@ -34,7 +34,7 @@ for i in $(seq $START $NUM_RUNS)
 do
     echo "Run $i of $NUM_RUNS"
     echo
-    RUN_POLARS_NEW_STREAMING=1 python3 -m queries.polars
+    RUN_POLARS_STREAMING=1 python3 -m queries.polars
     echo
 done
 
